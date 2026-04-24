@@ -19,6 +19,8 @@ import { createUserCredentials } from '../utils/testData.ts';
 type ApiProfile = 'smoke' | 'load';
 
 const PIZZA_RATING = 5;
+const TEST_RUN_ID =
+  __ENV.TEST_RUN_ID?.trim() || Date.now().toString(36).slice(-8);
 
 export function runApiPizzaJourney(
   baseUrl: string,
@@ -27,6 +29,7 @@ export function runApiPizzaJourney(
   const client = new QuickPizzaClient(baseUrl);
   const credentials = createUserCredentials(
     `${profile}-vu${exec.vu.idInTest}-it${exec.scenario.iterationInTest}`,
+    TEST_RUN_ID,
   );
   const metricTags = createMetricTags(profile);
   const startedAt = Date.now();

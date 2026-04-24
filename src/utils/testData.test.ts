@@ -10,6 +10,13 @@ describe('createUserCredentials', () => {
     });
   });
 
+  it('adds a run identifier when provided so repeated test runs do not collide', () => {
+    expect(createUserCredentials('vu1-it2', 'run42')).toEqual({
+      password: '12345678',
+      username: 'codex-qp-run42-vu1-it2',
+    });
+  });
+
   it('normalizes unsupported characters', () => {
     expect(createUserCredentials('VU 1 / Iteration 2').username).toBe(
       'codex-qp-vu-1-iteration-2',
