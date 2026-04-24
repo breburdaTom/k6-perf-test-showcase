@@ -41,10 +41,11 @@ function isPizza(value: unknown): value is PizzaRecommendationResponse['pizza'] 
   return (
     isRecord(value) &&
     typeof value.id === 'number' &&
-    Array.isArray(value.ingredients) &&
-    value.ingredients.every((ingredient) => isPizzaIngredient(ingredient)) &&
     typeof value.name === 'string' &&
-    typeof value.tool === 'string'
+    typeof value.tool === 'string' &&
+    Array.isArray(value.ingredients) &&
+    value.ingredients.length > 0 &&
+    value.ingredients.every((ingredient) => isPizzaIngredient(ingredient))
   );
 }
 
@@ -53,7 +54,6 @@ function isPizzaIngredient(
 ): value is PizzaRecommendationResponse['pizza']['ingredients'][number] {
   return (
     isRecord(value) &&
-    typeof value.id === 'number' &&
     typeof value.name === 'string' &&
     typeof value.vegetarian === 'boolean'
   );
