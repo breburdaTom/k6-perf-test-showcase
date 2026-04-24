@@ -1,6 +1,9 @@
 name: k6
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
   workflow_dispatch:
 
@@ -41,7 +44,7 @@ jobs:
 
   api-smoke:
     name: API Smoke
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
     needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -80,7 +83,7 @@ jobs:
 
   browser-smoke:
     name: Browser Smoke
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
     needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 10
