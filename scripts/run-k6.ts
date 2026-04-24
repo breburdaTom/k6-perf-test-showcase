@@ -2,36 +2,19 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 
-const [suite, profile] = process.argv.slice(2);
-
-const validSuites = new Set(['api', 'browser']);
-const validProfiles = new Set(['smoke', 'load']);
-
-if (!validSuites.has(suite ?? '')) {
-  printUsage(`Unsupported suite "${suite ?? ''}"`);
-}
-
-if (!validProfiles.has(profile ?? '')) {
-  printUsage(`Unsupported profile "${profile ?? ''}"`);
-}
-
-const resultsDir = process.env.RESULTS_DIR?.trim() || 'results';
-const summaryLabel =
-  process.env.SUMMARY_LABEL?.trim() || (suite === 'browser' ? 'browser' : profile);
-const scriptPath =
-  suite === 'browser'
-    ? 'src/scenarios/browser/quickpizza-browser.test.ts'
-    : 'src/scenarios/api/quickpizza-api.test.ts';
+import {
+  buildRunEnvironment,
+  resolveRunTarget,
+  RUN_USAGE,
+} from './runK6Config.ts';
 
 const browserExecutablePath =
   process.env.K6_BROWSER_EXECUTABLE_PATH || resolveBrowserExecutablePath();
-const environment: NodeJS.ProcessEnv = {
-  ...process.env,
-  K6_BROWSER_HEADLESS: normalizeBrowserHeadless(process.env.BROWSER_HEADLESS),
-  RESULTS_DIR: resultsDir,
-  SUMMARY_LABEL: summaryLabel,
-  TEST_PROFILE: suite === 'api' ? profile : process.env.TEST_PROFILE || 'smoke',
-};
+
+const runTarget = resolveTargetOrExit(process.argv.slice(2));
+const environment = buildRunEnvironment(process.env, runTarget);
+const resultsDir = environment.RESULTS_DIR ?? 'results';
+const summaryLabel = environment.SUMMARY_LABEL ?? runTarget.defaultSummaryLabel;
 
 if (browserExecutablePath) {
   environment.K6_BROWSER_EXECUTABLE_PATH = browserExecutablePath;
@@ -43,7 +26,7 @@ const rawOutputPath = join(resultsDir, `${summaryLabel}-raw.json`);
 const k6Binary = resolveK6Binary();
 const result = spawnSync(
   k6Binary,
-  ['run', '--out', `json=${rawOutputPath}`, scriptPath],
+  ['run', '--out', `json=${rawOutputPath}`, runTarget.scriptPath],
   {
     env: environment,
     stdio: 'inherit',
@@ -57,14 +40,21 @@ if (result.error) {
 
 process.exit(result.status ?? 1);
 
-function normalizeBrowserHeadless(rawValue: string | undefined): string {
-  return rawValue === 'false' ? 'false' : 'true';
-}
-
 function printUsage(message: string): never {
   console.error(message);
-  console.error('Usage: pnpm exec tsx ./scripts/run-k6.ts <api|browser> <smoke|load>');
+  console.error(RUN_USAGE);
   process.exit(1);
+}
+
+function resolveTargetOrExit(args: readonly string[]) {
+  try {
+    return resolveRunTarget(args);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Unable to resolve k6 run target.';
+
+    return printUsage(message);
+  }
 }
 
 function resolveK6Binary(): string {

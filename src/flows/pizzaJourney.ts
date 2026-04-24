@@ -1,19 +1,28 @@
 import { check, group } from 'k6';
 import exec from 'k6/execution';
+import type { Response } from 'k6/http';
 
 import {
   QuickPizzaClient,
-  parseJson,
-  type LoginResponse,
-  type PizzaRecommendationResponse,
-  type Rating,
-  type RatingsResponse,
 } from '../api/quickPizzaClient.ts';
+import type {
+  LoginResponse,
+  PizzaRecommendationResponse,
+  Rating,
+  RatingsResponse,
+} from '../api/quickPizzaPayloads.ts';
+import { tryParseJson } from '../api/responseParsing.ts';
 import { pickRestriction } from '../data/pizzaRestrictions.ts';
 import {
   journeyDuration,
   journeySuccessRate,
 } from '../metrics/customMetrics.ts';
+import {
+  isLoginResponse,
+  isPizzaRecommendationResponse,
+  isRating,
+  isRatingsResponse,
+} from './pizzaJourneyPayloads.ts';
 import { createUserCredentials } from '../utils/testData.ts';
 
 type ApiProfile = 'smoke' | 'load';
@@ -51,11 +60,20 @@ export function runApiPizzaJourney(
 
     group('login', () => {
       const response = client.login(credentials);
-      const loginResponse = parseJson<LoginResponse>(response);
       ensure(
         check(response, {
           'login returns 200': (res) => res.status === 200,
-          'login returns token': () => loginResponse.token.length > 0,
+        }),
+        'Login failed',
+      );
+      const loginResponse = parseResponse(
+        response,
+        isLoginResponse,
+        'Login response was invalid',
+      );
+      ensure(
+        check(loginResponse.token, {
+          'login returns token': (token) => token.length > 0,
         }),
         'Login failed',
       );
@@ -73,7 +91,11 @@ export function runApiPizzaJourney(
         'Pizza recommendation failed',
       );
 
-      return parseJson<PizzaRecommendationResponse>(response);
+      return parseResponse(
+        response,
+        isPizzaRecommendationResponse,
+        'Pizza recommendation response was invalid',
+      );
     });
 
     const rating = group('rate pizza', () => {
@@ -88,14 +110,24 @@ export function runApiPizzaJourney(
         'Rating creation failed',
       );
 
-      return parseJson<Rating>(response);
+      return parseResponse(response, isRating, 'Rating response was invalid');
     });
 
     ratingId = rating.id;
 
     group('verify ratings', () => {
       const response = client.getRatings();
-      const ratings = parseJson<RatingsResponse>(response);
+      ensure(
+        check(response, {
+          'ratings lookup returns 200': (res) => res.status === 200,
+        }),
+        'Rating verification failed',
+      );
+      const ratings = parseResponse(
+        response,
+        isRatingsResponse,
+        'Ratings response was invalid',
+      );
       const hasCreatedRating = ratings.ratings.some(
         (savedRating) =>
           savedRating.id === rating.id &&
@@ -104,12 +136,9 @@ export function runApiPizzaJourney(
       );
 
       ensure(
-        check(response, {
-          'ratings lookup returns 200': (res) => res.status === 200,
-        }) &&
-          check(hasCreatedRating, {
-            'ratings list contains the new rating': (value) => value,
-          }),
+        check(hasCreatedRating, {
+          'ratings list contains the new rating': (value) => value,
+        }),
         'Rating verification failed',
       );
     });
@@ -163,6 +192,20 @@ function ensure(condition: boolean, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
   }
+}
+
+function parseResponse<T>(
+  response: Response,
+  validator: (value: unknown) => value is T,
+  errorMessage: string,
+): T {
+  const parsedBody = tryParseJson(response);
+
+  if (!validator(parsedBody)) {
+    throw new Error(errorMessage);
+  }
+
+  return parsedBody;
 }
 
 function safeDeleteRating(client: QuickPizzaClient, ratingId: number): void {

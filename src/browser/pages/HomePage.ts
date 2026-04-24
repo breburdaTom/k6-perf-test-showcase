@@ -43,11 +43,19 @@ export class HomePage {
 
   async ratePizzaFiveStars(): Promise<void> {
     await this.loveItButton.click();
-    await this.rateResult.waitFor();
+    await this.page.waitForFunction(() => {
+      const rateResult = document.querySelector('#rate-result');
+
+      return rateResult?.textContent?.trim() === 'Rated!';
+    });
   }
 
   async requestPizza(): Promise<void> {
     await this.pizzaPleaseButton.click();
-    await this.recommendations.waitFor();
+    await this.page.waitForFunction(() => {
+      const recommendations = document.querySelector('#recommendations');
+
+      return recommendations?.textContent?.includes('Our recommendation:') ?? false;
+    });
   }
 }

@@ -25,8 +25,11 @@ export class RatingsPage {
 
   async clearRatings(): Promise<void> {
     await this.clearRatingsButton.click();
-    await this.page.waitForLoadState('networkidle');
-    await this.heading.waitFor();
+    await this.page.waitForFunction(() => {
+      const ratingsList = document.querySelector('ul');
+
+      return ratingsList?.textContent?.includes('No ratings yet') ?? false;
+    });
   }
 
   async getRatingsText(): Promise<string> {

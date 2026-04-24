@@ -3,6 +3,7 @@ import { browser } from 'k6/browser';
 
 import { QuickPizzaClient } from '../../api/quickPizzaClient.ts';
 import { runBrowserJourney } from '../../browser/browserJourney.ts';
+import { cleanupBrowserJourneyState } from '../../browser/browserCleanup.ts';
 import { createRuntimeConfig } from '../../config/env.ts';
 import { buildBrowserOptions } from '../../config/scenarios.ts';
 import { createSummaryReport } from '../../reporting/summary.ts';
@@ -36,12 +37,21 @@ export function setup(): BrowserSetupData {
 }
 
 export default async function (data: BrowserSetupData): Promise<void> {
+  const client = new QuickPizzaClient(runtimeConfig.baseUrl);
   const page = await browser.newPage();
+  let completed = false;
 
   try {
     await runBrowserJourney(page, runtimeConfig.baseUrl, data.credentials);
+    completed = true;
   } finally {
-    await page.close();
+    try {
+      await page.close();
+    } finally {
+      if (!completed) {
+        cleanupBrowserJourneyState(client, data.credentials);
+      }
+    }
   }
 }
 

@@ -1,47 +1,9 @@
 import http, { type Params, type Response } from 'k6/http';
 
 import type { PizzaRestrictions } from '../data/pizzaRestrictions.ts';
+import type { CreateRatingRequest } from './quickPizzaPayloads.ts';
 import type { UserCredentials } from '../utils/testData.ts';
 import { createTaggedDeleteRatingRequest } from '../utils/taggedUrl.ts';
-
-export interface RegisterUserResponse {
-  id: number;
-  username: string;
-}
-
-export interface LoginResponse {
-  token: string;
-}
-
-export interface PizzaRecommendationResponse {
-  calories: number;
-  pizza: {
-    id: number;
-    ingredients: Array<{
-      id: number;
-      name: string;
-      vegetarian: boolean;
-    }>;
-    name: string;
-    tool: string;
-  };
-  vegetarian: boolean;
-}
-
-export interface Rating {
-  id: number;
-  pizza_id: number;
-  stars: number;
-}
-
-export interface RatingsResponse {
-  ratings: Rating[];
-}
-
-export interface CreateRatingRequest {
-  pizza_id: number;
-  stars: number;
-}
 
 export class QuickPizzaClient {
   constructor(private readonly baseUrl: string) {}
@@ -95,10 +57,6 @@ export class QuickPizzaClient {
   logout(): Response {
     return http.post(`${this.baseUrl}/api/users/token/logout`, null);
   }
-}
-
-export function parseJson<T>(response: Response): T {
-  return response.json() as unknown as T;
 }
 
 function jsonParams(): Params {
