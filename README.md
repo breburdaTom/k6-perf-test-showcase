@@ -2,11 +2,11 @@
 
 ## Project Overview
 
-This repository is a portfolio-grade k6 harness for the public [QuickPizza](https://quickpizza.grafana.com/) application. The goal was not to produce a tutorial or a pile of one-off scripts. The goal was to show how a small performance project can still reflect production thinking:
+This repository is a portfolio-grade k6 harness for the public [QuickPizza](https://quickpizza.grafana.com/) application. The goal was to show how a small performance project can still reflect production thinking:
 
 - one business flow used consistently across test types
 - hard pass/fail performance gates
-- reusable test architecture instead of copy-paste HTTP calls
+- reusable test architecture
 - CI jobs that treat performance checks like delivery pipeline inputs
 
 The chosen flow is intentionally business-shaped:
@@ -20,7 +20,7 @@ The chosen flow is intentionally business-shaped:
 
 That flow is exercised at the protocol layer for speed and control, and at the browser layer for user-journey realism.
 
-The public QuickPizza host is a shared demo environment, so the load profile here is deliberately restrained. That is a design choice, not a missing feature. A real team should not point an aggressive portfolio load test at someone else’s public demo.
+The public QuickPizza host is a shared demo environment, so the load profile here is deliberately restrained. That is a design choice, not a missing feature. 
 
 ## Architecture Diagram
 
@@ -211,10 +211,3 @@ The repository also emits:
 - aggregated JSON summary files for artifact retention
 - browser metrics such as `browser_http_req_failed` and `browser_web_vital_lcp` when the browser suite runs in CI
 
-## Key Learnings
-
-1. Performance tests become much more credible when they model a business workflow instead of isolated endpoints.
-2. Reuse matters even in small k6 repositories. Separating API wrappers, flows, scenarios, and reporting keeps the test code understandable when you add the second and third test type.
-3. Browser checks should be meaningful, not oversized. A single real journey is more useful than pretending browser automation is where heavy load belongs.
-4. Public shared environments force engineering judgment. The right answer is not always “push more VUs”; sometimes the right answer is to keep the profile responsible and document why.
-5. CI artifacts are part of the product. If a threshold fails, the result files need to survive the failure.
