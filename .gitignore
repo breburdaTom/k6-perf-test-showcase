@@ -1,0 +1,6 @@
+node_modules/
+results/
+coverage/
+.DS_Store
+.codex/
+.pnpm-store/

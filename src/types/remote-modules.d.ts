@@ -1,0 +1,9 @@
+declare module 'https://jslib.k6.io/k6-summary/0.0.2/index.js' {
+  export function textSummary(
+    data: unknown,
+    options?: {
+      enableColors?: boolean;
+      indent?: string;
+    },
+  ): string;
+}

@@ -1,0 +1,22 @@
+{
+  "name": "k6-perf-test-showcase",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "pnpm test:smoke",
+    "test:unit": "vitest run",
+    "test:smoke": "tsx ./scripts/run-k6.ts api smoke",
+    "test:load": "tsx ./scripts/run-k6.ts api load",
+    "test:browser": "tsx ./scripts/run-k6.ts browser smoke"
+  },
+  "devDependencies": {
+    "@types/k6": "^1.7.0",
+    "@types/node": "^25.6.0",
+    "tsx": "^4.20.6",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
+  }
+}
